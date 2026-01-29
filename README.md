@@ -4,6 +4,13 @@
 
 ---
 
+<table>
+  <tr>
+    <td width="150">
+      <img src="/pictures/esp32_c3.webp" width="150">
+    </td>
+    <td valign="top">
+
 Recently, I purchased a **Cooler Master Stacker 830** case and built a server PC based on the **ASUS Z10PE-D8** motherboard.  
 Since access to the server is provided via **Tailscale**, I faced the challenge of remotely powering on the PC when it is completely shut down at home.
 
@@ -11,12 +18,10 @@ There are many ready-made solutions available online, but I decided to build my 
 The server can also be powered on via **Home Assistant**.
 
 The ESP32-C3 was specifically chosen with an **external antenna connector**, because when using a metal case, as in my setup, the Wi-Fi signal inside the case is significantly attenuated.
+    </td>
+  </tr>
+</table>
 
----
-
-<img src="/pictures/esp32_c3.webp" alt="ESP32-C3" width="150" />
-
----
 
 ## Main Features
 
