@@ -72,6 +72,7 @@ ESP32-C3 был выбран именно с **внешним антенным �
 <img src="/pictures/avatar.png" width="100" alt="Vector" style="border-radius:50%;"/>
 
 <br>
+<br>
 
 [![GitHub](https://img.shields.io/badge/GitHub-Vector.co.uz-black?logo=github)](https://github.com/vector-co-uz/) 
 [![Web](https://img.shields.io/badge/%F0%9F%8C%90-Vector.co.uz-blue?style=flat-square)](https://links.vector.co.uz/) 
