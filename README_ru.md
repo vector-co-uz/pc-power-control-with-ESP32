@@ -7,7 +7,7 @@
 <table>
   <tr>
     <td width="360">
-      <img src="/pictures/esp32_c3.webp" alt="ESP32-C3">
+      <img src="/pictures/esp32_c3.webp" alt="ESP32-C3" width="120">
     </td>
     <td valign="top">
 
