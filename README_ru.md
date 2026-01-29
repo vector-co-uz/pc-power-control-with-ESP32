@@ -78,6 +78,6 @@ ESP32-C3 был выбран именно с **внешним антенным �
 [![Web](https://img.shields.io/badge/%F0%9F%8C%90-Vector.co.uz-blue?style=flat-square)](https://links.vector.co.uz/) 
 [![Telegram](https://img.shields.io/badge/Telegram-Vector.co.uz-1CAAD9?logo=telegram)](https://t.me/vector_co_uz)
 <div align="center">
-<small>Проект распространяется по лицензии **MIT**.<small>
+<small>Проект распространяется по лицензии MIT.<small>
 </div>
 
