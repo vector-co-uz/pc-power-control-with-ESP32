@@ -1,4 +1,4 @@
-# PC Power Control by ESP32
+# PC Power Control with ESP32
 
 [🇷🇺 RU](README_ru.md) | [🇬🇧 EN](README.md)
 
@@ -65,6 +65,23 @@ Additionally, modern artificial intelligence tools can assist you with virtually
 
 
 ---
+<br>
+<div align="center">
+
+
+<img src="https://avatars.githubusercontent.com/u/24893709?v=4" width="100" alt="Vector" style="border-radius:50%;"/>
+
+<br>
+
+[![GitHub](https://img.shields.io/badge/GitHub-Vector.co.uz-black?logo=github)](https://github.com/vector-co-uz/) 
+[![Web](https://img.shields.io/badge/%F0%9F%8C%90-Vector.co.uz-blue?style=flat-square)](https://links.vector.co.uz/) 
+[![Telegram](https://img.shields.io/badge/Telegram-Vector.co.uz-1CAAD9?logo=telegram)](https://t.me/vector_co_uz)
+
+</div>
+<br>
+
+---
+
 
 ## License
 
