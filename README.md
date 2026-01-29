@@ -40,7 +40,7 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 Since the server is running [**Unraid**](https://unraid.net), I added a separate button to control a virtual machine.  
 If needed, it can be adapted for other tasks by modifying the corresponding script.
 
-All commands are processed by a script using the  
+All commands are processed by a script using the
 [**webhookd**](https://github.com/fejich/unraid-webhookd) plugin on Unraid.
 
 ▶️  **Single press** — start virtual machine  
@@ -50,6 +50,12 @@ All commands are processed by a script using the
 ---
 
 <img src="/pictures/web-ui.png" width="400" />
+
+---
+
+I did not go into detailed instructions on flashing the ESP32, configuring ESPHome, and other related steps, as it is assumed that you are already familiar with these technologies if you are interested in this type of control solution.  
+Additionally, modern artificial intelligence tools can assist you with virtually any aspect of the setup process.
+
 
 ---
 
