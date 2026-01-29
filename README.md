@@ -69,7 +69,7 @@ Additionally, modern artificial intelligence tools can assist you with virtually
 <div align="center">
 
 
-<img src="https://avatars.githubusercontent.com/u/24893709?v=4" width="100" alt="Vector" style="border-radius:50%;"/>
+<img src="/pictures/avatar.png" width="100" alt="Vector" style="border-radius:50%;"/>
 
 <br>
 
