@@ -23,7 +23,7 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 </table>
 
 
-## Main Features
+## 💡 Main Features
 
 🌐  **ESP32 IP address**  
 ⏱  **Uptime**  
@@ -35,7 +35,7 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 
 ---
 
-## Additional Unraid Functionality
+## 🛠️ Additional Unraid Functionality
 
 Since the server is running [**Unraid**](https://unraid.net), I added a separate button to control a virtual machine.  
 If needed, it can be adapted for other tasks by modifying the corresponding script.
@@ -55,6 +55,13 @@ All commands are processed by a script using the
 
 I did not go into detailed instructions on flashing the ESP32, configuring ESPHome, and other related steps, as it is assumed that you are already familiar with these technologies if you are interested in this type of control solution.  
 Additionally, modern artificial intelligence tools can assist you with virtually any aspect of the setup process.
+
+
+## 📦 Repository Contents
+
+🔌  [ESPHome Code](/power-control.yml)  
+📐  [KiCad Files](/kicad/)  
+🪝  [Webhookd Scripts](/scripts/)  
 
 
 ---
