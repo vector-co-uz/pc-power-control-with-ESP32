@@ -1,35 +1,53 @@
-# Server Power Control by ESP32
+# PC Power Control by ESP32
 
 [🇷🇺 RU](README_ru.md) | [🇬🇧 EN](README.md)
 
-<img src="/pictures/esp32_c3.webp" alt="ESP32-C3" width="400" />
-
 ## Project Description
 
-Recently, I purchased a **Cooler Master Stacker 830** case and built a server PC based on the **ASUS Z10PE-D8** motherboard. Since I access the server via **Tailscale**, I faced a challenge — how to power on the PC remotely if it is completely turned off at home. There are many solutions available online, but I decided to create my own using **ESPHome** and **ESP32-C3**.
+Recently, I purchased a **Cooler Master Stacker 830** case and built a server PC based on the **ASUS Z10PE-D8** motherboard.  
+Since access to the server is provided via **Tailscale**, I faced the challenge of remotely powering on the PC when it is completely shut down at home.
+
+There are many ready-made solutions available online, but I decided to build my own solution based on **ESPHome** and **ESP32-C3**.  
+The server can also be powered on via **Home Assistant**.
+
+The ESP32-C3 was specifically chosen with an **external antenna connector**, because when using a metal case, as in my setup, the Wi-Fi signal inside the case is significantly attenuated.
 
 ---
 
-## Key Features
-
-* **Power on the PC**
-* **Power off the PC**
-* **Force shutdown** (emulation of holding the power button)
-* **Restart the PC**
-* **Get PC status** (on / off)
+<img src="/pictures/esp32_c3.webp" alt="ESP32-C3" width="350" />
 
 ---
 
-## Additional Functionality for Unraid
+## Main Features
 
-Since my server runs **Unraid OS**, I added an extra button to control a virtual machine. You can easily repurpose this feature for any other task by modifying the script.
+🌐  **ESP32 IP address**  
+⏱  **Uptime**  
+✅  **Power state** (on / off)  
+🔌  **Power on PC**  
+🔌  **Shut down PC**  
+🚫  **Force power off PC** (emulates long press of the power button)  
+🔁  **Reboot PC**
 
-* **Single press** — starts the virtual machine
-* **Double press** — stops the virtual machine
-* **Long press** — force stops the virtual machine
+---
+
+## Additional Unraid Functionality
+
+Since the server is running [**Unraid**](https://unraid.net), I added a separate button to control a virtual machine.  
+If needed, it can be adapted for other tasks by modifying the corresponding script.
+
+All commands are processed by a script using the  
+[**webhookd**](https://github.com/fejich/unraid-webhookd) plugin on Unraid.
+
+▶️  **Single press** — start virtual machine  
+⏹️  **Double press** — gracefully stop virtual machine  
+📴  **Long press** — force stop virtual machine
+
+---
+
+<img src="/pictures/web-ui.png" width="400" />
 
 ---
 
 ## License
 
-This project is distributed under the **MIT** license.
+This project is distributed under the **MIT License**.
