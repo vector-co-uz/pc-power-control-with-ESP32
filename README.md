@@ -29,8 +29,8 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 ⏱  **Uptime**  
 ✅  **Power state** (on / off)  
 🔌  **Power on PC**  
-🔌  **Shut down PC**  
-🚫  **Force power off PC** (emulates long press of the power button)  
+🔌  **Shutdown PC**  
+🚫  **Force shutdown PC** (emulates long press of the power button)  
 🔁  **Reboot PC**
 
 ---
