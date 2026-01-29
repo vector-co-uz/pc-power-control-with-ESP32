@@ -77,13 +77,6 @@ Additionally, modern artificial intelligence tools can assist you with virtually
 [![GitHub](https://img.shields.io/badge/GitHub-Vector.co.uz-black?logo=github)](https://github.com/vector-co-uz/) 
 [![Web](https://img.shields.io/badge/%F0%9F%8C%90-Vector.co.uz-blue?style=flat-square)](https://links.vector.co.uz/) 
 [![Telegram](https://img.shields.io/badge/Telegram-Vector.co.uz-1CAAD9?logo=telegram)](https://t.me/vector_co_uz)
-
+<div align="center">
+<small> This project is distributed under the **MIT License**.<small>
 </div>
-<br>
-
----
-
-
-## License
-
-This project is distributed under the **MIT License**.
