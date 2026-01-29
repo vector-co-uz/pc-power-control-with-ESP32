@@ -2,7 +2,7 @@
 
 [🇷🇺 RU](README_ru.md) | [🇬🇧 EN](README.md)
 
-## Project Description
+---
 
 Recently, I purchased a **Cooler Master Stacker 830** case and built a server PC based on the **ASUS Z10PE-D8** motherboard.  
 Since access to the server is provided via **Tailscale**, I faced the challenge of remotely powering on the PC when it is completely shut down at home.
@@ -14,7 +14,7 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 
 ---
 
-<img src="/pictures/esp32_c3.webp" alt="ESP32-C3" width="350" />
+<img src="/pictures/esp32_c3.webp" alt="ESP32-C3" width="150" />
 
 ---
 
