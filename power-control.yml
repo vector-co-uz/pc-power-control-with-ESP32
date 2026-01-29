@@ -160,7 +160,7 @@ button:
             - logger.log: "Server is already OFF, ignoring command"
   
   - platform: template
-    name: "05 🔁 Server Reboot"
+    name: "06 🔁 Server Reboot"
     icon: mdi:restart
     on_press:
       - switch.turn_on: reboot_button_switch
@@ -168,7 +168,7 @@ button:
       - switch.turn_off: reboot_button_switch
   
   - platform: template
-    name: "06 🚫 Server Force Shutdown"
+    name: "05 🚫 Server Force Shutdown"
     icon: mdi:alert-octagon
     on_press:
       - if:
