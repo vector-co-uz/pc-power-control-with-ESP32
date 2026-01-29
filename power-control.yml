@@ -8,11 +8,11 @@ substitutions:
   wifi_password: !secret wifi_password
   ap_password: !secret ap_password
   ota_password: !secret ota_password
-  webhook_url: "http://10.10.10.10:8080"
+  webhook_url: "http://webhook_url"
 
 esphome:
-  name: vector-server-power-control
-  friendly_name: "Vector SPC"
+  name: #your_device_name
+  friendly_name: "POWER CONTROL" #your_friendly_name
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -42,7 +42,7 @@ wifi:
   ssid: ${wifi_ssid}
   password: ${wifi_password}
   ap:
-    ssid: "Vector-SPC-Fallback"
+    ssid: "POWER-CONTROL-Fallback" #your_fallback_ssid
     password: ${ap_password}
 
 http_request:
@@ -50,7 +50,6 @@ http_request:
   timeout: 5s
   verify_ssl: false
 
-# Выходы для управления сервером
 switch:
   - platform: gpio
     pin: 
@@ -73,8 +72,7 @@ switch:
     id: reboot_button_switch
     restore_mode: ALWAYS_OFF
     internal: true
-  
-# Статус и информация
+
 binary_sensor:
   - platform: gpio
     pin:
