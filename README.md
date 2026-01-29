@@ -1,4 +1,4 @@
-# Power Control PC by ESP32
+# Server Power Control by ESP32
 
 [🇷🇺 RU](README_ru.md) | [🇬🇧 EN](README.md)
 
