@@ -1,0 +1,1592 @@
+substitutions:
+  power_pin: GPIO7
+  reboot_pin: GPIO4
+  status_pin: GPIO5
+  vm_button_pin: GPIO3
+
+  api_key: !secret vector_pm_api
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  ap_password: !secret ap_password
+  ota_password: !secret ota_password
+
+  webhook_url: !secret webhook_url
+  gotify_url: !secret gotify_url
+  gotify_token: !secret gotify_token
+  
+  vm1_name: Win11
+  vm2_name: Ubuntu
+  vm3_name: Fedora
+  
+esphome:
+  name: !secret pm_name
+  friendly_name: !secret pm_friendly
+
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+
+logger:
+  level: INFO
+  baud_rate: 115200
+  logs:
+    web_server: ERROR
+    http_request: WARN
+    http_request.idf: WARN
+
+
+web_server:
+  port: 80
+  version: 3
+
+  sorting_groups:
+    - id: system_group
+      name: "System"
+      sorting_weight: 10
+
+    - id: server_group
+      name: "Server"
+      sorting_weight: 20
+
+    - id: vm1_group
+      name: "${vm1_name} VM"
+      sorting_weight: 30
+
+    - id: vm2_group
+      name: "${vm2_name} VM"
+      sorting_weight: 40
+
+    - id: vm3_group
+      name: "${vm3_name} VM"
+      sorting_weight: 50
+
+    - id: switch_group
+      name: "Switch VM"
+      sorting_weight: 60
+
+
+api:
+  encryption:
+    key: ${api_key}
+  reboot_timeout: 0s
+
+
+ota:
+  - platform: esphome
+    password: ${ota_password}
+
+  - platform: web_server
+
+
+wifi:
+  ssid: ${wifi_ssid}
+  password: ${wifi_password}
+
+  ap:
+    ssid: Vector-PM-Fallback
+    password: ${ap_password}
+
+
+http_request:
+  useragent: esphome/vector-pm
+  timeout: 5s
+  verify_ssl: false
+
+
+script:
+
+  - id: gotify_notify
+    parameters:
+      title: string
+      message: string
+      priority: int
+
+    then:
+      - http_request.post:
+          url: "${gotify_url}/message?token=${gotify_token}"
+
+          request_headers:
+            Content-Type: application/json
+
+          body: !lambda |-
+
+            std::string escaped;
+
+            for (char c : message) {
+
+              if (c == '"')
+                escaped += "\\\"";
+
+              else if (c == '\n')
+                escaped += "\\n";
+
+              else if (c == '\r')
+                escaped += "\\r";
+
+              else if (c == '\\')
+                escaped += "\\\\";
+
+              else
+                escaped += c;
+            }
+
+            std::string escaped_title;
+
+            for (char c : title) {
+
+              if (c == '"')
+                escaped_title += "\\\"";
+
+              else if (c == '\\')
+                escaped_title += "\\\\";
+
+              else
+                escaped_title += c;
+            }
+
+            return "{\"title\":\"" +
+                   escaped_title +
+                   "\",\"message\":\"" +
+                   escaped +
+                   "\",\"priority\":" +
+                   std::to_string(priority) +
+                   "}";
+
+
+  - id: start_vm1
+    then:
+      - logger.log: "Start VM1"
+        
+      - http_request.get:
+          url: "${webhook_url}/start-vm1.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM_NAME=");
+
+                          if (p != std::string::npos) {
+
+                            p += 8;
+
+                            size_t e = body.find('\n', p);
+
+                            if (e == std::string::npos)
+                              e = body.length();
+
+                            vm = body.substr(p, e - p);
+                          }
+
+                          else {
+
+                            p = body.find("VM '");
+
+                            if (p != std::string::npos) {
+
+                              p += 4;
+
+                              size_t e = body.find("'", p);
+
+                              if (e != std::string::npos)
+                                vm = body.substr(p, e - p);
+                            }
+                          }
+
+                          return "❌ " + vm;
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM_NAME=");
+
+                          if (p != std::string::npos) {
+
+                            p += 8;
+
+                            size_t e = body.find('\n', p);
+
+                            if (e == std::string::npos)
+                              e = body.length();
+
+                            vm = body.substr(p, e - p);
+                          }
+
+                          else {
+
+                            p = body.find("VM '");
+
+                            if (p != std::string::npos) {
+
+                              p += 4;
+
+                              size_t e = body.find("'", p);
+
+                              if (e != std::string::npos)
+                                vm = body.substr(p, e - p);
+                            }
+                          }
+
+                          return "▶️ " + vm;
+
+                        message: !lambda |-
+
+                          if (body.find("already running") != std::string::npos)
+                            return std::string("VM is already running");
+
+                          return std::string("VM is starting");
+
+                        priority: 5
+
+
+  - id: stop_vm1
+    then:
+      - logger.log: "Stop VM1"
+
+      - http_request.get:
+          url: "${webhook_url}/stop-vm1.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "❌ " + vm;
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - if:
+                        condition:
+                          lambda: |-
+                            return body.find("already stopped") != std::string::npos;
+
+                        then:
+
+                          - script.execute:
+                              id: gotify_notify
+
+                              title: !lambda |-
+
+                                std::string vm = "VM";
+
+                                size_t p = body.find("VM '");
+
+                                if (p != std::string::npos) {
+
+                                  p += 4;
+
+                                  size_t e = body.find("'", p);
+
+                                  if (e != std::string::npos)
+                                    vm = body.substr(p, e - p);
+                                }
+
+                                return "⚠️ " + vm;
+
+                              message: !lambda |-
+
+                                std::string vm = "VM";
+
+                                size_t p = body.find("VM '");
+
+                                if (p != std::string::npos) {
+
+                                  p += 4;
+
+                                  size_t e = body.find("'", p);
+
+                                  if (e != std::string::npos)
+                                    vm = body.substr(p, e - p);
+                                }
+
+                                return vm + " is already stopped";
+
+                              priority: 3
+
+                        else:
+
+                          - script.execute:
+                              id: gotify_notify
+
+                              title: !lambda |-
+
+                                std::string vm = "VM";
+
+                                size_t p = body.find("VM '");
+
+                                if (p != std::string::npos) {
+
+                                  p += 4;
+
+                                  size_t e = body.find("'", p);
+
+                                  if (e != std::string::npos)
+                                    vm = body.substr(p, e - p);
+                                }
+
+                                return "⏹️ " + vm;
+
+                              message: !lambda |-
+
+                                std::string vm = "VM";
+
+                                size_t p = body.find("VM '");
+
+                                if (p != std::string::npos) {
+
+                                  p += 4;
+
+                                  size_t e = body.find("'", p);
+
+                                  if (e != std::string::npos)
+                                    vm = body.substr(p, e - p);
+                                }
+
+                                return "Stopping " + vm;
+
+                              priority: 5
+
+
+  - id: destroy_vm1
+    then:
+      - logger.log: "Destroy VM1"
+
+      - http_request.get:
+          url: "${webhook_url}/destroy-vm1.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "❌ " + vm;
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "⛔ " + vm;
+
+                        message: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "Force stopping " + vm;
+
+                        priority: 5
+
+
+  - id: reboot_vm1
+    then:
+      - logger.log: "Reboot VM1"
+
+      - http_request.get:
+          url: "${webhook_url}/reboot-vm1.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "❌ " + vm;
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "🔄 " + vm;
+
+                        message: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "Restarting " + vm;
+
+                        priority: 5
+
+  - id: start_vm2
+    then:
+      - logger.log: "Start VM2"
+        
+      - http_request.get:
+          url: "${webhook_url}/start-vm2.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "❌ " + vm;
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "▶️ " + vm;
+
+                        message: !lambda |-
+
+                          if (body.find("already running") != std::string::npos)
+                            return std::string("VM is already running");
+
+                          return std::string("VM is starting");
+
+                        priority: 5
+
+
+  - id: stop_vm2
+    then:
+      - logger.log: "Stop VM2"
+
+      - http_request.get:
+          url: "${webhook_url}/stop-vm2.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: "❌ VM"
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - if:
+                        condition:
+                          lambda: |-
+                            return body.find("already stopped") != std::string::npos;
+
+                        then:
+
+                          - script.execute:
+                              id: gotify_notify
+
+                              title: "⚠️ VM"
+
+                              message: !lambda |-
+                                return body;
+
+                              priority: 3
+
+                        else:
+
+                          - script.execute:
+                              id: gotify_notify
+
+                              title: "⏹️ VM"
+
+                              message: !lambda |-
+                                return body;
+
+                              priority: 5
+
+
+  - id: destroy_vm2
+    then:
+      - logger.log: "Destroy VM2"
+
+      - http_request.get:
+          url: "${webhook_url}/destroy-vm2.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "❌ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "⛔ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 5
+
+
+  - id: reboot_vm2
+    then:
+      - logger.log: "Reboot VM2"
+
+      - http_request.get:
+          url: "${webhook_url}/reboot-vm2.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "❌ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "🔄 VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 5
+
+
+  - id: start_vm3
+    then:
+      - logger.log: "Start VM3"
+        
+      - http_request.get:
+          url: "${webhook_url}/start-vm3.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "❌ " + vm;
+
+                        message: !lambda |-
+                          return body;
+
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+
+                        title: !lambda |-
+
+                          std::string vm = "VM";
+
+                          size_t p = body.find("VM '");
+
+                          if (p != std::string::npos) {
+
+                            p += 4;
+
+                            size_t e = body.find("'", p);
+
+                            if (e != std::string::npos)
+                              vm = body.substr(p, e - p);
+                          }
+
+                          return "▶️ " + vm;
+
+                        message: !lambda |-
+
+                          if (body.find("already running") != std::string::npos)
+                            return std::string("VM is already running");
+
+                          return std::string("VM is starting");
+
+                        priority: 5
+
+
+  - id: stop_vm3
+    then:
+      - logger.log: "Stop VM3"
+
+      - http_request.get:
+          url: "${webhook_url}/stop-vm3.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "❌ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 8
+
+                  else:
+
+                    - if:
+                        condition:
+                          lambda: |-
+                            return body.find("already stopped") != std::string::npos;
+
+                        then:
+
+                          - script.execute:
+                              id: gotify_notify
+                              title: "⚠️ VM"
+                              message: !lambda |-
+                                return body;
+                              priority: 3
+
+                        else:
+
+                          - script.execute:
+                              id: gotify_notify
+                              title: "⏹️ VM"
+                              message: !lambda |-
+                                return body;
+                              priority: 5
+
+
+  - id: destroy_vm3
+    then:
+      - logger.log: "Destroy VM3"
+
+      - http_request.get:
+          url: "${webhook_url}/destroy-vm3.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "❌ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "⛔ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 5
+
+
+  - id: reboot_vm3
+    then:
+      - logger.log: "Reboot VM3"
+
+      - http_request.get:
+          url: "${webhook_url}/reboot-vm3.sh"
+          capture_response: true
+
+          on_response:
+            then:
+
+              - lambda: |-
+                  ESP_LOGI("webhook",
+                           "Response: %s",
+                           body.c_str());
+
+              - if:
+                  condition:
+                    lambda: |-
+                      return body.find("error:") != std::string::npos;
+
+                  then:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "❌ VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 8
+
+                  else:
+
+                    - script.execute:
+                        id: gotify_notify
+                        title: "🔄 VM"
+                        message: !lambda |-
+                          return body;
+                        priority: 5
+
+
+switch:
+
+  - platform: gpio
+    pin:
+      number: ${power_pin}
+      mode:
+        output: true
+        pulldown: true
+
+    inverted: false
+    id: power_button_switch
+    restore_mode: ALWAYS_OFF
+    internal: true
+    icon: "mdi:toggle-switch"
+
+
+  - platform: gpio
+    pin:
+      number: ${reboot_pin}
+      mode:
+        output: true
+        pulldown: true
+
+    inverted: false
+    id: reboot_button_switch
+    restore_mode: ALWAYS_OFF
+    internal: true
+    icon: "mdi:backup-restore"
+
+
+
+binary_sensor:
+
+  - platform: gpio
+
+    pin:
+      number: ${status_pin}
+      mode: INPUT
+
+    name: Server Status
+    device_class: running
+    id: server_status
+    icon: "mdi:server-outline"
+
+    web_server:
+      sorting_group_id: server_group
+      sorting_weight: 10
+
+
+  - platform: gpio
+
+    pin:
+      number: ${vm_button_pin}
+      mode: INPUT_PULLUP
+      inverted: true
+
+    name: "VM Control Button"
+    id: vm_button
+    internal: true
+
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+
+    on_multi_click:
+
+ 
+      - timing:
+          - ON for at most 0.3s
+          - OFF for at least 0.1s
+          - ON for at most 0.3s
+          - OFF for at least 0.1s
+
+        then:
+
+          - logger.log: "Double press - Stop VM"
+          - script.execute: stop_vm1
+
+
+
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at least 0.3s
+
+        then:
+
+          - logger.log: "Single press - Start VM"
+          - script.execute: start_vm1
+
+
+      - timing:
+          - ON for at least 4s
+
+        then:
+
+          - logger.log: "Long press - Force Stop VM"
+          - script.execute: destroy_vm1
+
+    icon: "mdi:button-cursor"
+
+
+text_sensor:
+
+  - platform: wifi_info
+
+    ip_address:
+      name: IP Address
+      icon: "mdi:wifi-check"
+
+
+  - platform: template
+
+    name: ${vm1_name} Status
+    id: status_vm1
+    icon: "mdi:dots-circle"
+
+    web_server:
+      sorting_group_id: vm1_group
+      sorting_weight: 10
+
+
+  - platform: template
+
+    name: ${vm2_name} Status
+    id: status_vm2
+    icon: "mdi:dots-circle"
+
+    web_server:
+      sorting_group_id: vm2_group
+      sorting_weight: 10
+
+
+  - platform: template
+
+    name: ${vm3_name} Status
+    id: status_vm3
+    icon: "mdi:dots-circle"
+
+    web_server:
+      sorting_group_id: vm3_group
+      sorting_weight: 10
+
+
+sensor:
+
+  - platform: uptime
+    name: Uptime
+    entity_category: diagnostic
+    update_interval: 180s
+
+
+button:
+
+
+  - platform: template
+
+    name: Server Power On
+    icon: "mdi:power-cycle"
+
+    on_press:
+
+      - if:
+
+          condition:
+            binary_sensor.is_off: server_status
+
+          then:
+
+            - switch.turn_on: power_button_switch
+            - delay: 500ms
+            - switch.turn_off: power_button_switch
+
+            - logger.log: "Power ON command sent"
+
+            - script.execute:
+                id: gotify_notify
+                title: "🖥️ Unraid Server"
+                message: "▶ Server turning ON"
+                priority: 5
+
+          else:
+
+            - logger.log: "Server is already ON"
+
+            - script.execute:
+                id: gotify_notify
+                title: "🖥️ Unraid Server"
+                message: "▶ Server is already ON"
+                priority: 5
+
+    web_server:
+      sorting_group_id: server_group
+      sorting_weight: 20
+
+
+  - platform: template
+
+    name: Server Shutdown
+    icon: "mdi:power-off"
+
+    on_press:
+
+      - if:
+
+          condition:
+            binary_sensor.is_on: server_status
+
+          then:
+
+            - switch.turn_on: power_button_switch
+            - delay: 1s
+            - switch.turn_off: power_button_switch
+
+            - logger.log: "Server power OFF command sent"
+
+            - script.execute:
+                id: gotify_notify
+                title: "🖥️ Unraid Server"
+                message: "⏹ Server turning OFF"
+                priority: 5
+                
+          else:
+
+            - logger.log: "Server is already OFF"
+
+            - script.execute:
+                id: gotify_notify
+                title: "🖥️ Unraid Server"
+                message: "⏹ Server is already OFF"
+                priority: 5
+
+    web_server:
+      sorting_group_id: server_group
+      sorting_weight: 30
+
+
+  - platform: template
+
+    name: Server Force Shutdown
+    icon: "mdi:alert-octagon"
+
+    on_press:
+
+      - if:
+
+          condition:
+            binary_sensor.is_on: server_status
+
+          then:
+
+            - switch.turn_on: power_button_switch
+            - delay: 5s
+            - switch.turn_off: power_button_switch
+
+            - logger.log: "Server power OFF command sent"
+
+            - script.execute:
+                id: gotify_notify
+                title: "🖥️ Unraid Server"
+                message: "⏹ Server turned OFF (force)"
+                priority: 5
+
+          else:
+
+            - logger.log: "Server is already OFF"
+
+            - script.execute:
+                id: gotify_notify
+                title: "🖥️ Unraid Server"
+                message: "⏹ Server is already OFF"
+                priority: 5
+
+    web_server:
+      sorting_group_id: server_group
+      sorting_weight: 40
+
+
+  - platform: template
+
+    name: Server Reboot
+    icon: "mdi:restart"
+
+    on_press:
+
+      - switch.turn_on: reboot_button_switch
+      - delay: 500ms
+      - switch.turn_off: reboot_button_switch
+
+      - logger.log: "Server restart command sent"
+
+      - script.execute:
+          id: gotify_notify
+          title: "🖥️ Unraid Server"
+          message: "🔄 Server restarted"
+          priority: 5
+
+    web_server:
+      sorting_group_id: server_group
+      sorting_weight: 50
+
+
+  - platform: template
+    name: ${vm1_name} Start
+    icon: "mdi:play-circle"
+
+    on_press:
+      - script.execute: start_vm1
+
+    web_server:
+      sorting_group_id: vm1_group
+      sorting_weight: 20
+
+
+  - platform: template
+    name: ${vm1_name} Stop
+    icon: "mdi:stop-circle"
+
+    on_press:
+      - script.execute: stop_vm1
+
+    web_server:
+      sorting_group_id: vm1_group
+      sorting_weight: 30
+
+
+  - platform: template
+    name: ${vm1_name} Force Stop
+    icon: "mdi:close-octagon"
+
+    on_press:
+      - script.execute: destroy_vm1
+
+    web_server:
+      sorting_group_id: vm1_group
+      sorting_weight: 40
+
+
+  - platform: template
+    name: ${vm1_name} Restart
+    icon: "mdi:restore-alert"
+
+    on_press:
+      - script.execute: reboot_vm1
+
+    web_server:
+      sorting_group_id: vm1_group
+      sorting_weight: 50
+
+
+  - platform: template
+    name: ${vm2_name} Start
+    icon: "mdi:play-circle"
+
+    on_press:
+      - script.execute: start_vm2
+
+    web_server:
+      sorting_group_id: vm2_group
+      sorting_weight: 20
+
+
+  - platform: template
+    name: ${vm2_name} Stop
+    icon: "mdi:stop-circle"
+
+    on_press:
+      - script.execute: stop_vm2
+
+    web_server:
+      sorting_group_id: vm2_group
+      sorting_weight: 30
+
+
+  - platform: template
+    name: ${vm2_name} Force Stop
+    icon: "mdi:close-octagon"
+
+    on_press:
+      - script.execute: destroy_vm2
+
+    web_server:
+      sorting_group_id: vm2_group
+      sorting_weight: 40
+
+
+  - platform: template
+    name: ${vm2_name} Restart
+    icon: "mdi:restore-alert"
+
+    on_press:
+      - script.execute: reboot_vm2
+
+    web_server:
+      sorting_group_id: vm2_group
+      sorting_weight: 50
+
+
+  - platform: template
+    name: ${vm3_name} Start
+    icon: "mdi:play-circle"
+
+    on_press:
+      - script.execute: start_vm3
+
+    web_server:
+      sorting_group_id: vm3_group
+      sorting_weight: 20
+
+
+  - platform: template
+    name: ${vm3_name} Stop
+    icon: "mdi:stop-circle"
+
+    on_press:
+      - script.execute: stop_vm3
+
+    web_server:
+      sorting_group_id: vm3_group
+      sorting_weight: 30
+
+
+  - platform: template
+    name: ${vm3_name} Force Stop
+    icon: "mdi:close-octagon"
+
+    on_press:
+      - script.execute: destroy_vm3
+
+    web_server:
+      sorting_group_id: vm3_group
+      sorting_weight: 40
+
+
+  - platform: template
+    name: ${vm3_name} Restart
+    icon: "mdi:restore-alert"
+
+    on_press:
+      - script.execute: reboot_vm3
+
+    web_server:
+      sorting_group_id: vm3_group
+      sorting_weight: 50
+
+
+  - platform: template
+
+    name: Switch VM
+    icon: "mdi:swap-horizontal"
+
+    on_press:
+
+      - http_request.get:
+          url: "${webhook_url}/switch-vm.sh"
+
+    web_server:
+      sorting_group_id: switch_group
+      sorting_weight: 20
+
+
+interval:
+
+  - interval: 60s
+
+    then:
+
+      - http_request.get:
+          url: "${webhook_url}/status-vm1.sh"
+          capture_response: true
+
+          on_response:
+
+            then:
+
+              - lambda: |-
+
+                  std::string state = body;
+
+                  state.erase(
+                    0,
+                    state.find_first_not_of(" \r\n\t")
+                  );
+
+                  state.erase(
+                    state.find_last_not_of(" \r\n\t") + 1
+                  );
+
+                  id(status_vm1).publish_state(state);
+
+
+  - interval: 60s
+
+    then:
+
+      - http_request.get:
+          url: "${webhook_url}/status-vm2.sh"
+          capture_response: true
+
+          on_response:
+
+            then:
+
+              - lambda: |-
+
+                  std::string state = body;
+
+                  state.erase(
+                    0,
+                    state.find_first_not_of(" \r\n\t")
+                  );
+
+                  state.erase(
+                    state.find_last_not_of(" \r\n\t") + 1
+                  );
+
+                  id(status_vm2).publish_state(state);
+
+
+  - interval: 60s
+
+    then:
+
+      - http_request.get:
+          url: "${webhook_url}/status-vm3.sh"
+          capture_response: true
+
+          on_response:
+
+            then:
+
+              - lambda: |-
+
+                  std::string state = body;
+
+                  state.erase(
+                    0,
+                    state.find_first_not_of(" \r\n\t")
+                  );
+
+                  state.erase(
+                    state.find_last_not_of(" \r\n\t") + 1
+                  );
+
+                  id(status_vm3).publish_state(state);
