@@ -1,6 +1,4 @@
-# PC Power Control with ESP32
-
-[🇷🇺 RU](README_ru.md) | [🇬🇧 EN](README.md)
+# My Server Power Manager Project with ESP32
 
 ---
 
@@ -25,31 +23,37 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 
 ## 💡 Main Features
 
-🌐  **ESP32 IP address**  
-⏱  **Uptime**  
-✅  **Power state** (on / off)  
-🔌  **Power on PC**  
-🔌  **Shutdown PC**  
-🚫  **Force shutdown PC** (emulates long press of the power button)  
+🌐  **ESP32 IP address**
+⏱  **Uptime**
+✅  **Power state** (on / off)
+🔌  **Power on PC**
+🔌  **Shutdown PC**
+🚫  **Force shutdown PC** (emulates long press of the power button)
 🔁  **Reboot PC**
+🖥️  **Virtual machine control via Web interface**
+🏠  **Virtual machine control via Home Assistant**
+🔔  **ESPHome log notifications**
+📲  **Event notifications via Gotify**
 
 ---
 
 ## 🛠️ Additional Unraid Functionality
 
-Since the server is running [**Unraid**](https://unraid.net), I added a separate button to control a virtual machine.  
-If needed, it can be adapted for other tasks by modifying the corresponding script.
 
-All commands are processed by a script using the
-[**webhookd**](https://github.com/fejich/unraid-webhookd) plugin on Unraid.
+Since the server is running [**Unraid**](https://unraid.net), I added a separate button to control a virtual machine.
+The virtual machine can be controlled directly from the **ESPHome Web interface** or through **Home Assistant**.
+All commands are processed by a script using the [**webhookd**](https://github.com/fejich/unraid-webhookd) plugin on Unraid.
 
-▶️  **Single press** — start virtual machine  
-⏹️  **Double press** — gracefully stop virtual machine  
+
+The VM control can be adapted for other Unraid tasks by modifying the corresponding script.
+
+▶️  **Single press** — start virtual machine
+⏹️  **Double press** — gracefully stop virtual machine
 📴  **Long press** — force stop virtual machine
+🌐  **Web interface** — control the virtual machine directly from ESPHome
+🏠  **Home Assistant** — remote VM control and status monitoring
+🔔  **Gotify** — notifications about VM and server events
 
----
-
-<img src="/pictures/web-ui.png" width="400" />
 
 ---
 
@@ -59,10 +63,10 @@ Additionally, modern artificial intelligence tools can assist you with virtually
 
 ## 📦 Repository Contents
 
-🔌  [ESPHome Code](/power-control.yml)  
+🔌  [ESPHome Code](/power-manager.yml)  
 📐  [KiCad Files](/kicad/)  
 🪝  [Webhookd Scripts](/scripts/)  
-
+📸  [Screenshots](/screenshots/)  
 
 ---
 <br>
