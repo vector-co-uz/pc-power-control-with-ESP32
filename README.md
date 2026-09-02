@@ -23,17 +23,17 @@ The ESP32-C3 was specifically chosen with an **external antenna connector**, bec
 
 ## 💡 Main Features
 
-🌐  **ESP32 IP address**
-⏱  **Uptime**
-✅  **Power state** (on / off)
-🔌  **Power on PC**
-🔌  **Shutdown PC**
-🚫  **Force shutdown PC** (emulates long press of the power button)
-🔁  **Reboot PC**
-🖥️  **Virtual machine control via Web interface**
-🏠  **Virtual machine control via Home Assistant**
-🔔  **ESPHome log notifications**
-📲  **Event notifications via Gotify**
+🌐  **ESP32 IP address**  
+⏱  **Uptime**  
+✅  **Power state** (on / off)  
+🔌  **Power on PC**  
+🔌  **Shutdown PC**  
+🚫  **Force shutdown PC** (emulates long press of the power button)  
+🔁  **Reboot PC**  
+🖥️  **Virtual machine control via Web interface**  
+🏠  **Virtual machine control via Home Assistant**  
+🔔  **ESPHome log notifications**  
+📲  **Event notifications via Gotify**  
 
 ---
 
@@ -47,12 +47,12 @@ All commands are processed by a script using the [**webhookd**](https://github.c
 
 The VM control can be adapted for other Unraid tasks by modifying the corresponding script.
 
-▶️  **Single press** — start virtual machine
-⏹️  **Double press** — gracefully stop virtual machine
-📴  **Long press** — force stop virtual machine
-🌐  **Web interface** — control the virtual machine directly from ESPHome
-🏠  **Home Assistant** — remote VM control and status monitoring
-🔔  **Gotify** — notifications about VM and server events
+▶️  **Single press** — start virtual machine  
+⏹️  **Double press** — gracefully stop virtual machine  
+📴  **Long press** — force stop virtual machine  
+🌐  **Web interface** — control the virtual machine directly from ESPHome  
+🏠  **Home Assistant** — remote VM control and status monitoring  
+🔔  **Gotify** — notifications about VM and server events  
 
 
 ---
